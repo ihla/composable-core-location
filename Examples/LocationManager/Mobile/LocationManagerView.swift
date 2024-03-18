@@ -101,10 +101,14 @@ struct ContentView: View {
       let locationManagerSubject = PassthroughSubject<LocationManager.Action, Never>()
       var locationManager = LocationManager.live
       locationManager.authorizationStatus = { .authorizedAlways }
-      locationManager.delegate = { locationManagerSubject.eraseToEffect() }
+        locationManager.delegate = { locationManagerSubject.eraseToAnyPublisher() }
       locationManager.locationServicesEnabled = { true }
       locationManager.requestLocation = {
-        .fireAndForget { locationManagerSubject.send(.didUpdateLocations([mockLocation])) }
+          Deferred {
+              locationManagerSubject.send(.didUpdateLocations([mockLocation]))
+              return Empty<Never, Never>()
+          }
+          .eraseToAnyPublisher()
       }
 
       let appView = LocationManagerView(
